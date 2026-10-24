@@ -8096,7 +8096,7 @@ jobs:
              final int[] fxDots = {0xFF9E9E9E, 0xFF29B6F6, 0xFF42A5F5, 0xFFFF7043, 0xFF66BB6A};
              r.addView(accordionGroupFaded(0xFF26A69A, "🎞", t("افکت کادر اصلی", "Main box effect"), fg, 0.6f, () -> {
               View[] its = new View[fxNames.length + 1];
-              for (int i = 0; i < its.length; i++) {
+              for (int i = 0; i < fxNames.length; i++) {
                final int k = i;
                its[i] = row(fxDots[i], "✦", fxNames[i], null, fx == fxIds[i] ? 1 : 0, fg, v -> {
                 sp.edit().putInt("bub_fx", fxIds[k]).apply();
