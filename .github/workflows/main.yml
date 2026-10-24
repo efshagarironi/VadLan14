@@ -2105,18 +2105,22 @@ jobs:
 
             private void closeList() {
              final int[] bpv = bubblePivot();
-             for (Box b : sideBoxes) { if (b.root != listRoot) { try { wm.removeView(b.root); } catch (Exception e) { } } }
+             final int mainFx = sp.getInt("bub_fx", 6);
+             // the first box is the action list itself; the newest box may be a folder column, so it is not always the main one
+             final FrameLayout mainRoot = !sideBoxes.isEmpty() ? sideBoxes.get(0).root : listRoot;
+             final WindowManager.LayoutParams mainP = !sideBoxes.isEmpty() ? sideBoxes.get(0).p : listParams;
+             // every folder column goes at once, with no effect
+             for (Box b : sideBoxes) { if (b.root != mainRoot) { try { wm.removeView(b.root); } catch (Exception e) { } } }
+             if (listRoot != null && listRoot != mainRoot) { try { wm.removeView(listRoot); } catch (Exception e) { } }
              sideBoxes.clear();
              curKey = null;
-            final FrameLayout old = listRoot;
-            listRoot = null;
-            listCard = null;
-            customItems = null;
-            if (old != null) {
-             final WindowManager.LayoutParams op = listParams;
-             final FrameLayout closing = old;
-             fxAnim(old, op, false, bpv[0], bpv[1], Integer.MIN_VALUE, sp.getInt("bub_fx", 6), () -> { try { wm.removeView(closing); } catch (Exception e) { } });
-            }
+             listRoot = null;
+             listCard = null;
+             customItems = null;
+             if (mainRoot != null) {
+              final FrameLayout closing = mainRoot;
+              fxAnim(mainRoot, mainP, false, bpv[0], bpv[1], Integer.MIN_VALUE, mainFx, () -> { try { wm.removeView(closing); } catch (Exception e) { } });
+             }
             handler.removeCallbacks(collapseRunnable);
             handler.postDelayed(collapseRunnable, collapseDelay());
            }
