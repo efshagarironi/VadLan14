@@ -2071,7 +2071,7 @@ jobs:
              r.setPivotX(px - ex);
              r.setPivotY(py - ey);
              // a folder column closed with the top slide simply goes away
-             if (fx == 0 || (folder && !open && (fx == 3 || fx == 5 || fx == 6))) { if (end != null) end.run(); return; }
+             if (fx == 0 || (folder && (fx == 5 || (!open && (fx == 3 || fx == 6))))) { r.setAlpha(1f); r.setScaleX(1f); r.setScaleY(1f); if (end != null) end.run(); return; }
              final int x0, y0;
              if (fx == 5 || fx == 2) {
               if (folder) { x0 = ex; y0 = folderTop - h; }
@@ -2103,7 +2103,7 @@ jobs:
 
             private void closeList() {
              final int[] bpv = bubblePivot();
-             for (Box b : sideBoxes) { if (b.root != listRoot) { final FrameLayout gone = b.root; fxAnim(b.root, b.p, false, bpv[0], bpv[1], Integer.MIN_VALUE, () -> { try { wm.removeView(gone); } catch (Exception e) { } }); } }
+             for (Box b : sideBoxes) { if (b.root != listRoot) { final FrameLayout gone = b.root; fxAnim(b.root, b.p, false, bpv[0], bpv[1], bpv[1], () -> { try { wm.removeView(gone); } catch (Exception e) { } }); } }
              sideBoxes.clear();
              curKey = null;
             final FrameLayout old = listRoot;
