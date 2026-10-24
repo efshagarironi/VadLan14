@@ -1882,7 +1882,7 @@ jobs:
            curCX = cxN; curCY = cyN;
            forcedX = null;
            forcedY = null;
-           fxAnim(listRoot, listParams, true, cxN, cyN, lastTouchRawY, null);
+           fxAnim(listRoot, listParams, true, cxN, cyN, lastTouchRawY, sp.getInt("bub_fxf", 0), null);
           }
 
           // closes the newest column with the chosen effect, towards its folder corner; the column under it is shown again
@@ -1897,7 +1897,7 @@ jobs:
            listParams = b.p;
            curKey = b.key;
            curCX = b.cx; curCY = b.cy;
-           fxAnim(old, op, false, ocx, ocy, ocy, () -> { try { wm.removeView(old); } catch (Exception e) { } });
+           fxAnim(old, op, false, ocx, ocy, ocy, sp.getInt("bub_fxf", 0), () -> { try { wm.removeView(old); } catch (Exception e) { } });
           }
 
           private void closeTopSide() {
@@ -2062,20 +2062,20 @@ jobs:
             }
 
             // the chosen box effect (the same for opening and closing); (px,py) = the screen point the box grows from / shrinks to
-            private void fxAnim(final FrameLayout r, final WindowManager.LayoutParams p, final boolean open, final int px, final int py, final int folderTop, final Runnable end) {
-             final int fx = sp.getInt("bub_fx", 6);
+            private void fxAnim(final FrameLayout r, final WindowManager.LayoutParams p, final boolean open, final int px, final int py, final int folderTop, final int fx, final Runnable end) {
              final long ms = Math.max(100, Math.min(1500, sp.getInt("bub_fxms", 300)));
              final int w = Math.max(1, p.width), h = Math.max(1, p.height);
              final int ex = p.x, ey = p.y;
              final boolean folder = folderTop != Integer.MIN_VALUE;
+             final boolean right = sp.getInt("mock_px", 70) > 50;
              r.setPivotX(px - ex);
              r.setPivotY(py - ey);
-             // a folder column closed with the top slide simply goes away
-             if (fx == 0 || (folder && (fx == 5 || (!open && (fx == 3 || fx == 6))))) { r.setAlpha(1f); r.setScaleX(1f); r.setScaleY(1f); if (end != null) end.run(); return; }
+             if (fx == 0) { r.setAlpha(1f); r.setScaleX(1f); r.setScaleY(1f); if (end != null) end.run(); return; }
              final int x0, y0;
-             if (fx == 5 || fx == 2) {
-              if (folder) { x0 = ex; y0 = folderTop - h; }
-              else { x0 = px - w / 2; y0 = py - h / 2; }
+             if (fx == 2 || fx == 5) {
+              if (!folder) { x0 = px - w / 2; y0 = py - h / 2; }
+              else if (fx == 5) { x0 = ex; y0 = folderTop - h; }
+              else { x0 = right ? px : px - w; y0 = py - h; }
              } else { x0 = ex; y0 = ey; }
              ValueAnimator va = ValueAnimator.ofFloat(open ? 0f : 1f, open ? 1f : 0f);
              va.setDuration(open ? ms : Math.max(100, ms - 60));
@@ -2085,7 +2085,9 @@ jobs:
               float a = Math.min(1f, f * 3f);
               if (fx == 1) r.setAlpha(f);
               else if (fx == 3) { float sc = 0.05f + 0.95f * f; r.setScaleX(sc); r.setScaleY(sc); r.setAlpha(a); }
+              else if (fx == 4) { r.setScaleY(0.05f + 0.95f * f); r.setAlpha(a); }
               else if (fx == 6) { r.setScaleX(0.3f + 0.7f * f); r.setScaleY(0.05f + 0.95f * f); r.setAlpha(a); }
+              else if (fx == 7) { r.setScaleX(0.05f + 0.95f * f); r.setAlpha(a); }
               else {
                r.setAlpha(a);
                if (fx == 5 && !folder && !open) { float sc = 0.1f + 0.9f * f; r.setScaleX(sc); r.setScaleY(sc); }
@@ -2103,7 +2105,7 @@ jobs:
 
             private void closeList() {
              final int[] bpv = bubblePivot();
-             for (Box b : sideBoxes) { if (b.root != listRoot) { final FrameLayout gone = b.root; fxAnim(b.root, b.p, false, bpv[0], bpv[1], bpv[1], () -> { try { wm.removeView(gone); } catch (Exception e) { } }); } }
+             for (Box b : sideBoxes) { if (b.root != listRoot) { try { wm.removeView(b.root); } catch (Exception e) { } } }
              sideBoxes.clear();
              curKey = null;
             final FrameLayout old = listRoot;
@@ -2113,7 +2115,7 @@ jobs:
             if (old != null) {
              final WindowManager.LayoutParams op = listParams;
              final FrameLayout closing = old;
-             fxAnim(old, op, false, bpv[0], bpv[1], Integer.MIN_VALUE, () -> { try { wm.removeView(closing); } catch (Exception e) { } });
+             fxAnim(old, op, false, bpv[0], bpv[1], Integer.MIN_VALUE, sp.getInt("bub_fx", 6), () -> { try { wm.removeView(closing); } catch (Exception e) { } });
             }
             handler.removeCallbacks(collapseRunnable);
             handler.postDelayed(collapseRunnable, collapseDelay());
@@ -7990,6 +7992,27 @@ jobs:
            }
 
            // ---------- bubble page ----------
+           // effects of the folder boxes (the columns after the first box of the action list and of the bubble moves)
+           static final String[] FXF_FA = {"بدون افکت", "محو شدن", "کشویی", "بزرگ شدن از حباب", "کرکره‌ای", "کشویی از بالا", "قطره‌ای (کش‌دار)", "کش افقی"};
+           static final String[] FXF_EN = {"No effect", "Fade", "Slide from the side", "Grow from the bubble", "Shutter", "Slide from the top", "Drop (stretchy)", "Horizontal stretch"};
+           static final int[] FXF_IDS = {0, 1, 2, 3, 4, 5, 6, 7};
+           static final int[] FXF_DOTS = {0xFF9E9E9E, 0xFF42A5F5, 0xFF26A69A, 0xFFFF7043, 0xFF8D6E63, 0xFF66BB6A, 0xFF29B6F6, 0xFFAB47BC};
+
+           View folderFxGroup(final int fg) {
+            final int cur = sp.getInt("bub_fxf", 0);
+            return accordionGroupFaded(0xFF26A69A, "🗂", t("افکت های کادر پوشه", "Folder box effects"), fg, 0.6f, () -> {
+             View[] its = new View[FXF_IDS.length];
+             for (int i = 0; i < its.length; i++) {
+              final int k = i;
+              its[i] = row(FXF_DOTS[i], "✦", fa ? FXF_FA[i] : FXF_EN[i], null, cur == FXF_IDS[i] ? 1 : 0, fg, v -> {
+               sp.edit().putInt("bub_fxf", FXF_IDS[k]).apply();
+               show();
+              });
+             }
+             return its;
+            });
+           }
+
            View bubblePage(final int fg) {
             LinearLayout r = vbox();
             r.addView(topBar(t("عملکرد", "Actions"), fg));
@@ -8071,8 +8094,8 @@ jobs:
                t("کشویی از بالا", "Slide from the top")};
              final int[] fxIds = {0, 6, 1, 3, 5};
              final int[] fxDots = {0xFF9E9E9E, 0xFF29B6F6, 0xFF42A5F5, 0xFFFF7043, 0xFF66BB6A};
-             r.addView(accordionGroupFaded(0xFF26A69A, "🎞", t("افکت کادر عملکرد", "Action box effect"), fg, 0.6f, () -> {
-              View[] its = new View[fxNames.length];
+             r.addView(accordionGroupFaded(0xFF26A69A, "🎞", t("افکت کادر اصلی", "Main box effect"), fg, 0.6f, () -> {
+              View[] its = new View[fxNames.length + 1];
               for (int i = 0; i < its.length; i++) {
                final int k = i;
                its[i] = row(fxDots[i], "✦", fxNames[i], null, fx == fxIds[i] ? 1 : 0, fg, v -> {
@@ -8080,6 +8103,7 @@ jobs:
                 show();
                });
               }
+              its[fxNames.length] = folderFxGroup(fg);
               return its;
              }));
              r.addView(accordionRow(0xFFFFB300, "⏱", t("سرعت افکت کادر عملکرد", "Action box effect speed"), "bub_fxms", 100, 1500, 300, " ms", fg, null));
